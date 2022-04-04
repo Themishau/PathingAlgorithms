@@ -4,6 +4,3 @@ from pathAlgorithm import AlgoGame
 if __name__ == '__main__':
     pathalgo = AlgoGame()
     pathalgo.startGame()
-
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
