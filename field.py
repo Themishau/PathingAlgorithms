@@ -9,13 +9,17 @@ class field:
             "food": 1,
             "obstacle": 2,
             "player": 3}
-        self.fields = []
+        self.field = []
+        self.reset_playground()
 
     def add_from_field(self, gridx, gridy, id):
-        self.fields[gridx][gridy] = id
+        self.field[gridx][gridy] = id
 
     def remove_from_field(self, gridx, gridy):
-        self.fields[gridx][gridy] = None
+        self.field[gridx][gridy] = None
 
     def reset_playground(self):
-        print()
+        for column in self.field:
+            self.field[column] = []
+            for row in self.field[column]:
+                self.field[column][row] = self.object_table["empty"]
