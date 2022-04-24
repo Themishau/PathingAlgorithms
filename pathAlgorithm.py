@@ -1,6 +1,6 @@
 import pygame
-import field
-import algorithm
+from field import Field
+from AlgorithmPlayer import AlgorithmPlayer
 import astar
 from pygame.locals import (
     K_UP,
@@ -11,14 +11,23 @@ from pygame.locals import (
     KEYDOWN,
     QUIT,
 )
+# Compares two positions
+def positionsAreEqual(positionA, positionB):
+    return positionA.x == positionB.x and positionA.y == positionB.y
+
+
+
 
 class AlgoGame:
     def __init__(self):
         # Define constants for the screen width and height
 
         self.SCREEN_WIDTH = 800
-        self.SCREEN_HEIGHT = 600
+        self.SCREEN_HEIGHT = 800
         self.clock = pygame.time.Clock()
+
+        self.field = Field(800)
+        self.algorithmPlayer = AlgorithmPlayer('TestALgorithm')
 
     def startGame(self):
 
@@ -33,7 +42,16 @@ class AlgoGame:
         while running:
             # Did the user click the window close button?
             for event in pygame.event.get():
-                if event.type == pygame.QUIT:
+                # Did the user hit a key?
+                if event.type == KEYDOWN:
+
+                    # Was it the Escape key? If so, stop the loop.
+                    if event.key == K_ESCAPE:
+                        running = False
+
+                # Did the user click the window close button? If so, stop the loop.
+                elif event.type == QUIT:
+
                     running = False
 
             # Fill the background with white

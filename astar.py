@@ -1,5 +1,5 @@
 import random
-from field import field
+from field import Field
 
 class Node:
     def __init__(self, node_position, gCost, parent, goalPosition):
@@ -71,7 +71,7 @@ class aStar:
 
     def compute(self):
         # The closedTable describes, which elements have already been visited by the algorithm
-        closedTable = field(len(self.obstaclesTable), len(self.obstaclesTable)).fields
+        closedTable = Field(len(self.obstaclesTable), len(self.obstaclesTable)).fields
         startField = Node(self.startPosition, 0, None, self.goalPosition)
 
         # The open List represents the possible neighbouring fields which could be visited next.

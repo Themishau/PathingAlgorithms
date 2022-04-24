@@ -1,11 +1,5 @@
 from pathAlgorithm import AlgoGame
-from field import field
-from astar import *
 
-
-# Compares two positions
-def positionsAreEqual(positionA, positionB):
-    return positionA.x == positionB.x and positionA.y == positionB.y
 
 
 
