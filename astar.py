@@ -1,6 +1,7 @@
 import random
 from field import Field
 
+
 class Node:
     def __init__(self, node_position, gCost, parent, goalPosition):
         self.nodePosition = node_position
@@ -59,15 +60,14 @@ class PriorityQueue:
         return self.items.pop(0)
 
 
-
 # The aStar is a commonly used algorithm for pathfinding. This is a custom implementation of the algorithm.
 # It looks for the shortest path from a starting point to a given goal. Any obstacles, represented
 # through the obstacles Table, will not be traversed.
 class aStar:
     def __init__(self, obstaclesTable, goalPosition, startPosition):
         self.obstaclesTable = obstaclesTable
-        self.goalPosition   = goalPosition
-        self.startPosition  = startPosition
+        self.goalPosition = goalPosition
+        self.startPosition = startPosition
 
     def compute(self):
         # The closedTable describes, which elements have already been visited by the algorithm
@@ -96,45 +96,36 @@ class aStar:
 
             # If this field has the same coordinates as the goal, the goal has been found.
             if self.positionsAreEqual(smallestFScoreField.position, self.goalPosition):
-                return { 'pathFound': True, 'nextNode': self.reconstruct_path(smallestFScoreField) }
+                return {'pathFound': True, 'nextNode': self.reconstruct_path(smallestFScoreField)}
 
             # bottom neighbour
             if y + 1 < self.obstaclesTable.length and self.obstaclesTable[x][y + 1] == 0 and closedTable[x][y + 1] == 0:
-                neighbour = Node({ 'x': x, 'y': y + 1 }, smallestFScoreField.gCost + 1, smallestFScoreField, self.goalPosition)
+                neighbour = Node({'x': x, 'y': y + 1}, smallestFScoreField.gCost + 1, smallestFScoreField,
+                                 self.goalPosition)
                 openList.enqueue(neighbour, neighbour.fCost)
-
 
             # upper neighbour
             if y - 1 >= 0 and self.obstaclesTable[x][y - 1] == 0 and closedTable[x][y - 1] == 0:
-                neighbour = Node({ 'x': x, 'y': y - 1 }, smallestFScoreField.gCost + 1, smallestFScoreField, self.goalPosition)
+                neighbour = Node({'x': x, 'y': y - 1}, smallestFScoreField.gCost + 1, smallestFScoreField,
+                                 self.goalPosition)
                 openList.enqueue(neighbour, neighbour.fCost)
-
 
             # right neighbour
             if x + 1 < self.obstaclesTable.length and self.obstaclesTable[x + 1][y] == 0 and closedTable[x + 1][y] == 0:
-                neighbour = Node({ 'x': x + 1, 'y': y }, smallestFScoreField.gCost + 1, smallestFScoreField, self.goalPosition)
+                neighbour = Node({'x': x + 1, 'y': y}, smallestFScoreField.gCost + 1, smallestFScoreField,
+                                 self.goalPosition)
                 openList.enqueue(neighbour, neighbour.fCost)
-
 
             # left neighbour
             if x - 1 >= 0 and self.obstaclesTable[x - 1][y] == 0 and closedTable[x - 1][y] == 0:
-                neighbour = Node({ 'x': x - 1, 'y': y }, smallestFScoreField.gCost + 1, smallestFScoreField, self.goalPosition)
+                neighbour = Node({'x': x - 1, 'y': y}, smallestFScoreField.gCost + 1, smallestFScoreField,
+                                 self.goalPosition)
                 openList.enqueue(neighbour, neighbour.fCost)
 
-        return { 'pathFound': False, 'nextNode': None }
+        return {'pathFound': False, 'nextNode': None}
 
     # The aStar algorithm delivers a path to the goal. Going it backwards to the first node of the path
     # allows to find the next position to move, in order to follow the path calculated by aStar
-
-    def reconstruct_path(self, current):
-        while current.parent is not None:
-            if current.parent.parent is not None:
-                current = current.parent
-            else:
-                return current
-        return current
-
-
 
     # This function determines to which position the AI will move next, using the aStar algorithm or a random free field
     # in case of the aStar not finding a path. This can happen when there is no path to the goal, for example if the goal is encircled by
@@ -147,49 +138,49 @@ class aStar:
         aStarResult = aStar(obstaclesTable, itemPosition, currentPosition)
 
         if aStarResult.pathFound() is True:
-        # aStar can only find a path, if the food position is reacheable in the current state of the game
+            # aStar can only find a path, if the food position is reacheable in the current state of the game
 
             nextNode = aStarResult.nextNode
             if nextNode.position.x > currentPosition.x:
-                #move right!
-                return { 'movementIsPossible': True, 'direction': { 'dx': 1, 'dy': 0 }}
+                # move right!
+                return {'movementIsPossible': True, 'direction': {'dx': 1, 'dy': 0}}
 
             if nextNode.position.x < currentPosition.x:
-                #move left!
-                return { 'movementIsPossible': True, 'direction': { 'dx': -1, 'dy': 0 }}
+                # move left!
+                return {'movementIsPossible': True, 'direction': {'dx': -1, 'dy': 0}}
 
             if nextNode.position.y > currentPosition.y:
-                #move down!
-                return { 'movementIsPossible': True, 'direction': { 'dx': 0, 'dy': 1 }}
+                # move down!
+                return {'movementIsPossible': True, 'direction': {'dx': 0, 'dy': 1}}
 
             if nextNode.position.y < currentPosition.y:
-                #move up!
-                return { 'movementIsPossible': True, 'direction': { 'dx': 0, 'dy': -1 }}
+                # move up!
+                return {'movementIsPossible': True, 'direction': {'dx': 0, 'dy': -1}}
 
-        #if aStar can not find a valid path, an adjacent free field will be chosen
+        # if aStar can not find a valid path, an adjacent free field will be chosen
         else:
-            if currentPosition.y + 1 < obstaclesTable.length and obstaclesTable[currentPosition.x][currentPosition.y + 1] == 0:
-                #move down!
-                return { 'movementIsPossible': True, 'direction': { 'dx': 0, 'dy': 1 } }
+            if currentPosition.y + 1 < obstaclesTable.length and obstaclesTable[currentPosition.x][
+                currentPosition.y + 1] == 0:
+                # move down!
+                return {'movementIsPossible': True, 'direction': {'dx': 0, 'dy': 1}}
 
             if currentPosition.y - 1 >= 0 and obstaclesTable[currentPosition.x][currentPosition.y - 1] == 0:
-                #move up!
-                return { 'movementIsPossible': True, 'direction': { 'dx': 0, 'dy': -1 } }
+                # move up!
+                return {'movementIsPossible': True, 'direction': {'dx': 0, 'dy': -1}}
 
-            if currentPosition.x + 1 < obstaclesTable.length and obstaclesTable[currentPosition.x + 1][currentPosition.y] == 0:
-                #move right!
-                return { 'movementIsPossible': True, 'direction': { 'dx': 1, 'dy': 0 } }
+            if currentPosition.x + 1 < obstaclesTable.length and obstaclesTable[currentPosition.x + 1][
+                currentPosition.y] == 0:
+                # move right!
+                return {'movementIsPossible': True, 'direction': {'dx': 1, 'dy': 0}}
 
             if currentPosition.x - 1 >= 0 and obstaclesTable[currentPosition.x - 1][currentPosition.y] == 0:
-                #move left!
-                return { 'movementIsPossible': True, 'direction': { 'dx': -1, 'dy': 0 } }
-            return { 'movementIsPossible': False, 'direction': { 'dx': 1, 'dy': 0 } }
+                # move left!
+                return {'movementIsPossible': True, 'direction': {'dx': -1, 'dy': 0}}
+            return {'movementIsPossible': False, 'direction': {'dx': 1, 'dy': 0}}
 
-
-    #Compares two positions
+    # Compares two positions
     def positionsAreEqual(self, positionA, positionB):
         return positionA.x == positionB.x and positionA.y == positionB.y
-
 
     # The aStar algorithm delivers a path to the goal. Going it backwards to the first node of the path
     # allows to find the next position to move, in order to follow the path calculated by aStar
