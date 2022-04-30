@@ -2,6 +2,7 @@ import pygame
 import math
 import random
 
+
 class Field(pygame.sprite.Sprite):
     def __init__(self, xSize, testmode):
         super(Field, self).__init__()
@@ -10,6 +11,7 @@ class Field(pygame.sprite.Sprite):
         self.gridSizey = 40
         self.gridSizex = 40
         self.gridfield = 25
+        self.weightscale = 10
 
         self.xSize = math.ceil(xSize / self.gridSizeScale)
         self.ySize = math.ceil(xSize / self.gridSizeScale)
@@ -49,17 +51,16 @@ class Field(pygame.sprite.Sprite):
         for column in range(0, self.ySize):
             self.field.append([])
             for row in range(0, self.xSize):
-                self.field[column].append(self.object_table["empty"])
-
+                self.field[column].append({"fieldtype": self.object_table["empty"],
+                                           "fieldweight": random.randrange(self.weightscale)})
 
     def set_random_obstacles(self):
         if self.field is not None:
             for column in self.field:
                 column[random.randrange(len(column))] = self.object_table["obstacle"]
 
-
         # self.print_field()
 
     def print_field(self):
-        for i,row in enumerate(self.field):
+        for i, row in enumerate(self.field):
             print("column {} {}".format(i, len(row)))
