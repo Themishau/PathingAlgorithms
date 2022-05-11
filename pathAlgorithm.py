@@ -45,28 +45,39 @@ class AlgoGame:
         self.gridsizeY = 800 / self.blocksize
 
         self.field = Field(800, True)
-        self.field.print_field()
+        # self.field.print_field()
         self.algorithmPlayer = AlgorithmPlayer('TestAlgorithm')
 
     def draw_objects_on_field(self, field):
         surf = pygame.Surface((self.field_WIDTH, self.field_HEIGHT))
         for i, column in enumerate(field, start=0):
             for j, row in enumerate(field[i], start=0):
+                # empty field
                 if row == 0:
                     pygame.draw.rect(surf, (122, 122, 122),
                                      ((j * self.blocksize, i * self.blocksize), (self.blocksize, self.blocksize)),
                                      width=0, border_radius=0, border_top_left_radius=-1, border_top_right_radius=-1,
                                      border_bottom_left_radius=-1, border_bottom_right_radius=-1)
+                # obstacle
                 if row == 2:
                     pygame.draw.rect(surf, (22, 255, 22),
                                      ((j * self.blocksize, i * self.blocksize), (self.blocksize, self.blocksize)),
                                      width=0, border_radius=0, border_top_left_radius=-1, border_top_right_radius=-1,
                                      border_bottom_left_radius=-1, border_bottom_right_radius=-1)
+                # goal
+                if row == 1:
+                    pygame.draw.rect(surf, color='yellow',
+                                     rect=((j * self.blocksize, i * self.blocksize), (self.blocksize, self.blocksize)),
+                                     width=0, border_radius=0, border_top_left_radius=-1, border_top_right_radius=-1,
+                                     border_bottom_left_radius=-1, border_bottom_right_radius=-1)
+
                 pygame.draw.rect(surf, (255, 255, 255),
                                  ((j * self.blocksize, i * self.blocksize), (self.blocksize, self.blocksize)),
                                  width=1, border_radius=0, border_top_left_radius=-1, border_top_right_radius=-1,
                                  border_bottom_left_radius=-1, border_bottom_right_radius=-1)
+
                 # print("{} {} {} {}".format(j, i, j , i ))
+        return surf
 
     def startGame(self):
 

@@ -2,6 +2,22 @@ import pygame
 import math
 import random
 
+class Rect:
+    def __init__(self, pos, size):
+        self.pos = pos
+        self.size = size
+
+    def contains(self, position):
+        return not (position.pos.x < self.pos.x
+                    or position.pos.y < self.pos.y
+                    or position.x >= (self.pos.x + self.size.x)
+                    or position.y >= (self.pos.y + self.size.y))
+
+    def contains(self, rect):
+        return not (rect.pos.x < self.pos.x
+                    or position.pos.y < self.pos.y
+                    or position.x >= (self.pos.x + self.size.x)
+                    or position.y >= (self.pos.y + self.size.y))
 
 class Field(pygame.sprite.Sprite):
     def __init__(self, xSize, testmode):
@@ -24,11 +40,12 @@ class Field(pygame.sprite.Sprite):
 
         self.object_table = {
             "empty": 0,
-            "food": 1,
+            "goal": 1,
             "obstacle": 2,
             "player": 3}
 
         self.reset_playground()
+        self.set_random_goal()
         if testmode is True:
             self.set_random_obstacles()
 
@@ -60,6 +77,10 @@ class Field(pygame.sprite.Sprite):
                 column[random.randrange(len(column))] = self.object_table["obstacle"]
 
         # self.print_field()
+
+    def set_random_goal(self):
+        if self.field is not None:
+            self.field[random.randrange(len(self.field[0]))][random.randrange(len(self.field[0]))] = self.object_table["goal"]
 
     def print_field(self):
         for i, row in enumerate(self.field):
