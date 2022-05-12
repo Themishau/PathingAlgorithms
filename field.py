@@ -7,17 +7,25 @@ class Rect:
         self.pos = pos
         self.size = size
 
-    def contains(self, position):
-        return not (position.pos.x < self.pos.x
-                    or position.pos.y < self.pos.y
-                    or position.x >= (self.pos.x + self.size.x)
-                    or position.y >= (self.pos.y + self.size.y))
+    def contains_point(self, point):
+        return not (point.pos.x < self.pos.x
+                    or point.y < self.pos.y
+                    or point.x >= (self.pos.x + self.size.x)
+                    or point.y >= (self.pos.y + self.size.y))
 
-    def contains(self, rect):
-        return not (rect.pos.x < self.pos.x
-                    or position.pos.y < self.pos.y
-                    or position.x >= (self.pos.x + self.size.x)
-                    or position.y >= (self.pos.y + self.size.y))
+    def contains_rect(self, rect):
+        return (rect.pos.x < self.pos.x) \
+                and (rect.pos.x + rect.size.x < self.pos.x + self.size.x) \
+                and (rect.pos.y < self.pos.y) \
+                and (rect.pos.y + rect.size.y < self.pos.y + self.size.y)
+
+    def overlaps_rect(self, rect):
+        return self.pos.x < rect.pos.x + rect.size.x \
+               and self.pos.x + self.size.x >= rect.pos.x \
+               and self.pos.y < rect.pos.y + rect.size.y \
+               and self.pos.y + self.size.y >= rect.pos.y
+
+
 
 class Field(pygame.sprite.Sprite):
     def __init__(self, xSize, testmode):
