@@ -26,14 +26,41 @@ class Rect:
                and self.pos.y + self.size.y >= rect.pos.y
 
 
+class QuadTree:
+    def __init__(self, field, depth):
+        self.depth = depth
+        # field based on grid example 40x40
+        self.field = field
+        # array of field of children
+        self.fieldarray = []
+        # max 4 quadtree children
+        self.quadtreechildren = []
+        # stored im this quadtree
+        self.items = []
+
+    def add_depth(self):
+        self.depth += 1
+
+    def resize(self, field):
+        self.field = field
+
+    # get size of all quadtrees and its children
+    def size(self):
+        count = len(self.items)
+        for children in self.quadtreechildren:
+            count += children.size()
+        return count
+
+
+
 
 class Field(pygame.sprite.Sprite):
     def __init__(self, xSize, testmode):
         super(Field, self).__init__()
 
-        self.gridSizeScale = 40
-        self.gridSizey = 40
-        self.gridSizex = 40
+        self.gridSizeScale = 20
+        self.gridSizey = 20
+        self.gridSizex = 20
         self.gridfield = 25
         self.weightscale = 10
 

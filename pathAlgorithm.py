@@ -40,7 +40,7 @@ class AlgoGame:
 
         # example 800 / 20 = 40
         # block size is 20x20
-        self.blocksize = 40
+        self.blocksize = 20
         self.gridsizeX = 800 / self.blocksize
         self.gridsizeY = 800 / self.blocksize
 
