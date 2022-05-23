@@ -2,6 +2,8 @@ import pygame
 import math
 import random
 
+max_depth = 8
+
 class Rect:
     def __init__(self, pos, size):
         self.pos = pos
@@ -46,10 +48,38 @@ class QuadTree:
 
     # get size of all quadtrees and its children
     def size(self):
+
         count = len(self.items)
+
         for children in self.quadtreechildren:
+            # count all children and call children
             count += children.size()
+
         return count
+
+    def insert(self, item, rectItemSize):
+        for i in range(3):
+            if self.fieldarray[i] is not None:
+
+                # max depth reached?
+                if self.depth + 1 < max_depth:
+
+                    # does child exists?
+                    if self.quadtreechildren[i] is None:
+                        # create child
+                        self.quadtreechildren[i] = QuadTree(self.fieldarray[i], self.depth + 1)
+
+                    # child exists
+                    self.quadtreechildren[i].insert(item, rectItemSize)
+                    return True
+
+        # if it does not fit into the children, so the item belongs to this object
+        self.items.append({'item': item, 'itemsize': rectItemSize})
+
+
+
+
+
 
 
 
@@ -79,7 +109,7 @@ class Field(pygame.sprite.Sprite):
             "obstacle": 2,
             "player": 3}
 
-        self.reset_playground()
+        self.reset_playground_field()
         self.set_random_goal()
         if testmode is True:
             self.set_random_obstacles()
@@ -93,20 +123,20 @@ class Field(pygame.sprite.Sprite):
     def get_field(self):
         return self.field
 
-    def add_obstacle_playground(self):
+    def add_obstacle_to_playground(self):
         for column in self.field:
             self.field[column] = []
             for row in self.field[column]:
                 self.field[column][row] = self.object_table["obstacle"]
 
-    def reset_playground(self):
+    def reset_playground_field(self):
         for column in range(0, self.ySize):
             self.field.append([])
             for row in range(0, self.xSize):
                 self.field[column].append({"fieldtype": self.object_table["empty"],
                                            "fieldweight": random.randrange(self.weightscale)})
 
-    def set_random_obstacles(self):
+    def set_random_obstacles_to_field(self):
         if self.field is not None:
             for column in self.field:
                 column[random.randrange(len(column))] = self.object_table["obstacle"]
