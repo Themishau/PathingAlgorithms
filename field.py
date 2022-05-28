@@ -6,6 +6,7 @@ max_depth = 8
 
 class Rect:
     def __init__(self, pos, size):
+        # pos has y and x values based on grid
         self.pos = pos
         self.size = size
 
@@ -28,23 +29,24 @@ class Rect:
                and self.pos.y + self.size.y >= rect.pos.y
 
 
+
 class QuadTree:
-    def __init__(self, field, depth):
+    def __init__(self, mRect, depth):
         self.depth = depth
-        # field based on grid example 40x40
-        self.field = field
+        # field based on grid example for grid 40x40
+        self.mRect = mRect
         # array of field of children
-        self.fieldarray = []
+        self.mRectOfChildren = []
         # max 4 quadtree children
         self.quadtreechildren = []
-        # stored im this quadtree
+        # stored im this quadtree with area + object itself
         self.items = []
 
     def add_depth(self):
         self.depth += 1
 
     def resize(self, field):
-        self.field = field
+        self.mRect = field
 
     # get size of all quadtrees and its children
     def size(self):
@@ -59,7 +61,7 @@ class QuadTree:
 
     def insert(self, item, rectItemSize):
         for i in range(3):
-            if self.fieldarray[i] is not None:
+            if self.mRectOfChildren[i] is not None:
 
                 # max depth reached?
                 if self.depth + 1 < max_depth:
@@ -67,7 +69,7 @@ class QuadTree:
                     # does child exists?
                     if self.quadtreechildren[i] is None:
                         # create child
-                        self.quadtreechildren[i] = QuadTree(self.fieldarray[i], self.depth + 1)
+                        self.quadtreechildren[i] = QuadTree(self.mRectOfChildren[i], self.depth + 1)
 
                     # child exists
                     self.quadtreechildren[i].insert(item, rectItemSize)
@@ -76,14 +78,41 @@ class QuadTree:
         # if it does not fit into the children, so the item belongs to this object
         self.items.append({'item': item, 'itemsize': rectItemSize})
 
+    def searchAllItems(self, rectItemSize):
+
+        listItems = []
+        listItems = self.search_item(rectItemSize, listItems)
+        return listItems
+
+    def search_item(self, rectItemSize, listItems):
+
+        for item in self.items:
+            if rectItemSize.overlaps_rect(item.first):
+                listItems.append(item.second)
+
+        for children, index in enumerate(self.quadtreechildren):
+            # if in rect, add it to list without checks
+            if rectItemSize.contains_rect(self.mRectOfChildren[index]):
+                listItems = self.quadtreechildren[index].fillItems(listItems)
+            # if overlaps, we need to do some checks
+            elif self.mRectOfChildren[index].overlaps_rect(rectItemSize):
+                listItems = self.quadtreechildren[index].search_item(rectItemSize, listItems)
+
+    def fillItems(self, listItems):
+        # add items to list
+        for item in self.items:
+            listItems.append(item)
+        # call children recursively
+        for children, index in enumerate(self.quadtreechildren):
+            listItems = self.quadtreechildren[index].fillItems(listItems)
+
+        return listItems
+
+    def getArea(self):
+        return self.mRect
 
 
-
-
-
-
-
-
+# easy implementation of field
 class Field(pygame.sprite.Sprite):
     def __init__(self, xSize, testmode):
         super(Field, self).__init__()
@@ -101,7 +130,13 @@ class Field(pygame.sprite.Sprite):
         self.surf.fill((255, 255, 255))
         self.rect = self.surf.get_rect()
 
+        # easy field with objects in it
         self.field = []
+        # quadtree "field" filled with objects
+        self.quadtree = QuadTree(Rect([0,0], # pos
+                                      [self.xSize, self.ySize]), # size
+                                 0) # depth
+
 
         self.object_table = {
             "empty": 0,
@@ -112,7 +147,7 @@ class Field(pygame.sprite.Sprite):
         self.reset_playground_field()
         self.set_random_goal()
         if testmode is True:
-            self.set_random_obstacles()
+            self.set_random_obstacles_to_field()
 
     def add_to_field(self, gridx, gridy, id):
         self.field[gridx][gridy] = id
