@@ -1,5 +1,5 @@
 import random
-from field import Field
+from linearfield import LinearField
 
 
 class Node:
@@ -71,7 +71,7 @@ class aStar:
 
     def compute(self):
         # The closedTable describes, which elements have already been visited by the algorithm
-        closedTable = Field(len(self.obstaclesTable), len(self.obstaclesTable)).fields
+        closedTable = LinearField(len(self.obstaclesTable), len(self.obstaclesTable)).fields
         startField = Node(self.startPosition, 0, None, self.goalPosition)
 
         # The open List represents the possible neighbouring fields which could be visited next.

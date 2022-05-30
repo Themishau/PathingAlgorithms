@@ -1,5 +1,5 @@
 import pygame
-from field import Field
+from linearfield import LinearField
 from AlgorithmPlayer import AlgorithmPlayer
 import astar
 from button import Button
@@ -44,7 +44,7 @@ class AlgoGame:
         self.gridsizeX = 800 / self.blocksize
         self.gridsizeY = 800 / self.blocksize
 
-        self.field = Field(800, True)
+        self.field = LinearField(800, True)
         # self.field.print_field()
         self.algorithmPlayer = AlgorithmPlayer('TestAlgorithm')
 

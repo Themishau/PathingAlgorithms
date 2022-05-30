@@ -42,11 +42,17 @@ class QuadTree:
         # stored im this quadtree with area + object itself
         self.items = []
 
+        self.object_table = {
+            "empty": 0,
+            "goal": 1,
+            "obstacle": 2,
+            "player": 3}
+
     def add_depth(self):
         self.depth += 1
 
-    def resize(self, field):
-        self.mRect = field
+    def resize(self, rArea):
+        self.mRect = rArea
 
     # get size of all quadtrees and its children
     def size(self):
@@ -60,7 +66,7 @@ class QuadTree:
         return count
 
     def insert(self, item, rectItemSize):
-        for i in range(3):
+        for i in range(4):
             if self.mRectOfChildren[i] is not None:
 
                 # max depth reached?
@@ -98,7 +104,7 @@ class QuadTree:
             elif self.mRectOfChildren[index].overlaps_rect(rectItemSize):
                 listItems = self.quadtreechildren[index].search_item(rectItemSize, listItems)
 
-    def fillItems(self, listItems):
+    def getAllItems(self, listItems):
         # add items to list
         for item in self.items:
             listItems.append(item)
@@ -113,9 +119,83 @@ class QuadTree:
 
 
 # easy implementation of field
-class Field(pygame.sprite.Sprite):
+class QuadtreeField(pygame.sprite.Sprite):
     def __init__(self, xSize, testmode):
-        super(Field, self).__init__()
+        super(QuadtreeField, self).__init__()
+
+        self.gridSizeScale = 20
+        self.gridSizey = 20
+        self.gridSizex = 20
+        self.gridfield = 25
+        self.weightscale = 10
+
+        self.xSize = math.ceil(xSize / self.gridSizeScale)
+        self.ySize = math.ceil(xSize / self.gridSizeScale)
+
+        self.surf = pygame.Surface((75, 25))
+        self.surf.fill((255, 255, 255))
+        self.rect = self.surf.get_rect()
+
+        # # easy field with objects in it
+        # self.field = []
+
+        # quadtree "field" filled with objects
+        self.quadtree = None
+
+
+        self.object_table = {
+            "empty": 0,
+            "goal": 1,
+            "obstacle": 2,
+            "player": 3}
+
+        self.reset_playground_field()
+        self.set_random_goal()
+
+        if testmode is True:
+            self.set_random_obstacles_to_field()
+
+    def add_to_field(self, gridx, gridy, id):
+        self.field[gridx][gridy] = id
+
+    def remove_from_field(self, gridx, gridy):
+        self.field[gridx][gridy] = None
+
+    def get_field(self):
+        return self.field
+
+    def add_obstacle_to_playground(self, position):
+        self.quadtree.insert({"item": self.object_table["obstacle"],
+                              "weight": random.randrange(self.weightscale)}, Rect(position, {'x': 1, 'y': 1}))
+
+    def reset_playground_field(self):
+        for column in range(0, self.ySize):
+            self.field.append([])
+            for row in range(0, self.xSize):
+                self.field[column].append({"fieldtype": self.object_table["empty"],
+                                           "fieldweight": random.randrange(self.weightscale)})
+
+    def set_random_obstacles_to_field(self):
+        if self.field is not None:
+            for column in self.field:
+                column[random.randrange(len(column))] = self.object_table["obstacle"]
+
+        # self.print_field()
+
+    def set_random_goal(self):
+        if self.field is not None:
+            self.field[random.randrange(len(self.field[0]))][random.randrange(len(self.field[0]))] = self.object_table["goal"]
+
+    def print_field(self):
+        for i, row in enumerate(self.field):
+            print("column {} {}".format(i, len(row)))
+
+
+
+# easy implementation of field
+class LinearField(pygame.sprite.Sprite):
+    def __init__(self, xSize, testmode):
+        super(LinearField, self).__init__()
 
         self.gridSizeScale = 20
         self.gridSizey = 20

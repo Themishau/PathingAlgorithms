@@ -1,4 +1,4 @@
-from field import Field
+from linearfield import LinearField
 from AlgorithmPlayer import AlgorithmPlayer
 
 
@@ -9,7 +9,7 @@ class LevelConfig:
         self.levelOption = levelOption
         self.backGroudSpace = []
         self.bg_image = None
-        self.PlaygroundLevel = Field(xSize)
+        self.PlaygroundLevel = LinearField(xSize)
         self.AlgorithmPlayer = []
         self.speed = 0
         self.playMode = self.levelOption.winCondition.playType
