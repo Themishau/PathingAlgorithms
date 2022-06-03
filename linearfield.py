@@ -1,52 +1,57 @@
 import pygame
 import math
 import random
-
+from dataclasses import dataclass, field, asdict
 max_depth = 8
 
+@dataclass(order=True,repr=True, eq=True)
 class Rect:
-    def __init__(self, pos, size):
-        # pos has y and x values based on grid
-        self.pos = pos
-        self.size = size
+    pos:  {int, int}
+    size: {int, int}
 
-    def contains_point(self, point):
+    def resizeRect(self, Rect):
+        self.pos = Rect.pos
+        self.size = Rect.size
+
+    def contains_point(self, point) -> bool:
         return not (point.pos.x < self.pos.x
                     or point.y < self.pos.y
                     or point.x >= (self.pos.x + self.size.x)
                     or point.y >= (self.pos.y + self.size.y))
 
-    def contains_rect(self, rect):
+    def contains_rect(self, rect) -> bool:
         return (rect.pos.x < self.pos.x) \
                 and (rect.pos.x + rect.size.x < self.pos.x + self.size.x) \
                 and (rect.pos.y < self.pos.y) \
                 and (rect.pos.y + rect.size.y < self.pos.y + self.size.y)
 
-    def overlaps_rect(self, rect):
-        return self.pos.x < rect.pos.x + rect.size.x \
+    def overlaps_rect(self, rect) -> bool:
+        return self.pos.x < rect.pos.x + rect.__size.x \
                and self.pos.x + self.size.x >= rect.pos.x \
                and self.pos.y < rect.pos.y + rect.size.y \
                and self.pos.y + self.size.y >= rect.pos.y
 
 
-
+@dataclass(order=True,repr=True, eq=True)
 class QuadTree:
-    def __init__(self, mRect, depth):
-        self.depth = depth
-        # field based on grid example for grid 40x40
-        self.mRect = mRect
-        # array of field of children
-        self.mRectOfChildren = []
-        # max 4 quadtree children
-        self.quadtreechildren = []
-        # stored im this quadtree with area + object itself
-        self.items = []
 
-        self.object_table = {
-            "empty": 0,
-            "goal": 1,
-            "obstacle": 2,
-            "player": 3}
+
+    # field based on grid example for grid 40x40
+    mRect : Rect
+    # array of field of children
+    mRectOfChildren : [] = 'default_factory'
+    # max 4 quadtree children
+    quadtreechildren : [] = 'default_factory'
+    # stored im this quadtree with area + object itself
+    items : [] = 'default_factory'
+
+    depth : int = 0
+
+    object_table = {
+        "empty": 0,
+        "goal": 1,
+        "obstacle": 2,
+        "player": 3}
 
     def add_depth(self):
         self.depth += 1
@@ -61,7 +66,7 @@ class QuadTree:
 
         for children in self.quadtreechildren:
             # count all children and call children
-            count += children.size()
+            count += children.__size()
 
         return count
 
@@ -119,41 +124,42 @@ class QuadTree:
 
 
 # easy implementation of field
+@dataclass(order=True,repr=True, eq=True)
 class QuadtreeField(pygame.sprite.Sprite):
-    def __init__(self, xSize, testmode):
-        super(QuadtreeField, self).__init__()
+    # super(QuadtreeField, self).__init__()
+    # quadtree "field" filled with objects
+    quadtree: QuadTree
 
-        self.gridSizeScale = 20
-        self.gridSizey = 20
-        self.gridSizex = 20
-        self.gridfield = 25
-        self.weightscale = 10
+    gridSizeScale: int = 20
+    gridSizey: int = 20
+    gridSizex: int = 20
+    gridfield: int = 25
+    weightscale: int = 10
+    xSize: int = 0
+    xSize = math.ceil(xSize / gridSizeScale)
+    ySize = math.ceil(xSize / gridSizeScale)
 
-        self.xSize = math.ceil(xSize / self.gridSizeScale)
-        self.ySize = math.ceil(xSize / self.gridSizeScale)
+    surf = pygame.Surface((75, 25))
+    surf.fill((255, 255, 255))
+    rect = surf.get_rect()
 
-        self.surf = pygame.Surface((75, 25))
-        self.surf.fill((255, 255, 255))
-        self.rect = self.surf.get_rect()
-
-        # # easy field with objects in it
-        # self.field = []
-
-        # quadtree "field" filled with objects
-        self.quadtree = None
+    # # easy field with objects in it
+    # self.field = []
 
 
-        self.object_table = {
-            "empty": 0,
-            "goal": 1,
-            "obstacle": 2,
-            "player": 3}
 
-        self.reset_playground_field()
-        self.set_random_goal()
 
-        if testmode is True:
-            self.set_random_obstacles_to_field()
+    object_table = {
+        "empty": 0,
+        "goal": 1,
+        "obstacle": 2,
+        "player": 3}
+
+    # self.reset_playground_field()
+    # self.set_random_goal()
+    #
+    # if testmode is True:
+    #     self.set_random_obstacles_to_field()
 
     def add_to_field(self, gridx, gridy, id):
         self.field[gridx][gridy] = id

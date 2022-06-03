@@ -1,5 +1,5 @@
 import pygame
-from linearfield import LinearField
+from linearfield import LinearField, QuadtreeField, QuadTree, Rect
 from AlgorithmPlayer import AlgorithmPlayer
 import astar
 from button import Button
@@ -45,8 +45,10 @@ class AlgoGame:
         self.gridsizeY = 800 / self.blocksize
 
         self.field = LinearField(800, True)
+        self.quadfield = QuadtreeField(QuadTree(Rect({0,0},{self.gridsizeX, self.gridsizeY})))
         # self.field.print_field()
         self.algorithmPlayer = AlgorithmPlayer('TestAlgorithm')
+
 
     def draw_objects_on_field(self, field):
         surf = pygame.Surface((self.field_WIDTH, self.field_HEIGHT))
