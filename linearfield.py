@@ -130,10 +130,22 @@ class QuadTree(object):
                 listItems = self.quadtreechildren[index].search_item(rectItemSize, listItems)
                 return listItems
 
-    def change_item(self, item: Item) -> None:
-        pass
+    def change_item(self, position: Rect, item: Item) -> None:
 
-    def remove_item(self, position: Rect, item: Item) -> None:
+        for index, item in enumerate(self.items):
+            if position.overlaps_rect(item['itemsize']):
+                # delete by index
+                del self.items[index]
+
+        for index, children in enumerate(self.quadtreechildren):
+            # if in rect, add it to list without checks
+            if position.contains_rect(self.mRectOfChildren[index]):
+                self.items[index] = {'item': item, 'itemsize': self.items[index]['itemsize'] }
+            # if overlaps, we need to do some checks
+            elif self.mRectOfChildren[index].overlaps_rect(position):
+                self.quadtreechildren[index].change_item(position, item)
+
+    def remove_item(self, position: Rect) -> None:
 
         for index, item in enumerate(self.items):
             if position.overlaps_rect(item['itemsize']):
@@ -146,7 +158,7 @@ class QuadTree(object):
                 del self.items[index]
             # if overlaps, we need to do some checks
             elif self.mRectOfChildren[index].overlaps_rect(position):
-                self.quadtreechildren[index].remove_item(position, item)
+                self.quadtreechildren[index].remove_item(position)
 
 
     def fillIItemsTolistItems(self, listItems: list) -> list:
@@ -206,7 +218,7 @@ class QuadtreeField(pygame.sprite.Sprite):
 
     def remove_from_field(self, gridx: int, gridy: int):
         """ removes item from field """
-        self.quadtree.remove_item(Rect({'x': gridx, 'y': gridy}), item)
+        self.quadtree.remove_item(Rect({'x': gridx, 'y': gridy}))
 
     def get_field(self):
         return self.field
