@@ -45,7 +45,11 @@ class AlgoGame:
         self.gridsizeY = 800 / self.blocksize
 
         self.field = LinearField(800, True)
-        self.quadfield = QuadtreeField(QuadTree(Rect({0,0},{self.gridsizeX, self.gridsizeY})))
+        self.quadfield = QuadtreeField(QuadTree(Rect({'x': 0, 'y':0},{'x': self.gridsizeX, 'y': self.gridsizeY})), size=int(self.field_WIDTH))
+        self.quadfield.initilizeQuadtree()
+        self.quadfield.set_random_obstacles_to_field()
+        self.quadfield.print_field()
+
         # self.field.print_field()
         self.algorithmPlayer = AlgorithmPlayer('TestAlgorithm')
 

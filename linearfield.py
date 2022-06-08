@@ -17,8 +17,13 @@ class Item(Enum):
 
 @dataclass(order=True, repr=True, eq=True)
 class Rect:
-    pos: {int, int} = field(default_factory=dict)
-    size: {int, int} = field(default_factory=dict)
+    pos: {'"x"': int, '"y"': int}
+    size: {'"x"': int, '"y"': int}
+
+    def __truediv__(self, other):
+        size = self.size
+        return {'x': size['x'] / other, 'y': size['y'] / other}
+
 
     def resizeRect(self, Rect):
         self.pos = Rect.pos
@@ -65,14 +70,17 @@ class QuadTree(object):
     def add_depth(self):
         self.depth += 1
 
+
     def resize(self, rArea):
         self.ClearItems()
         self.mRect = rArea
-        childSize = self.mRect.size / 2
+        print(self.mRect)
+        childSize = self.mRect / 2
+        print(childSize)
         self.mRectOfChildren = [Rect(self.mRect.pos, childSize),
-                                Rect({'x': self.mRect.pos.x + childSize.x, 'y': self.mRect.pos.y}, childSize),
-                                Rect({'x': self.mRect.pos.x, 'y': self.mRect.pos.y + childSize.y}, childSize),
-                                Rect({'x': self.mRect.pos.x + childSize.x, 'y': self.mRect.pos.y + childSize.y},
+                                Rect({'x': self.mRect.pos['x'] + childSize['x'], 'y': self.mRect.pos['y']}, childSize),
+                                Rect({'x': self.mRect.pos['x'], 'y': self.mRect.pos['y'] + childSize['y']}, childSize),
+                                Rect({'x': self.mRect.pos['x'] + childSize['x'], 'y': self.mRect.pos['y'] + childSize['y']},
                                      childSize)]
 
     def ClearItems(self):
@@ -181,15 +189,15 @@ class QuadtreeField(pygame.sprite.Sprite):
     # super(QuadtreeField, self).__init__()
     # quadtree "field" filled with objects
     quadtree: QuadTree
-
+    size: int = 0
     gridSizeScale: int = 20
     gridSizey: int = 20
     gridSizex: int = 20
     gridfield: int = 25
     weightscale: int = 10
-    xSize: int = 0
-    xSize = math.ceil(xSize / gridSizeScale)
-    ySize = math.ceil(xSize / gridSizeScale)
+
+    xSize = math.ceil(size / gridSizeScale)
+    ySize = math.ceil(size / gridSizeScale)
 
     surf = pygame.Surface((75, 25))
     surf.fill((255, 255, 255))
@@ -211,44 +219,41 @@ class QuadtreeField(pygame.sprite.Sprite):
     #     self.set_random_obstacles_to_field()
 
     def initilizeQuadtree(self) -> None:
-        self.quadtree.resize(Rect({'x': 0, 'y': 0}, {'xSize': self.xSize, 'ySize': self.ySize}))
+        self.xSize = math.ceil(self.size / self.gridSizeScale)
+        self.ySize = math.ceil(self.size / self.gridSizeScale)
+        self.quadtree.resize(Rect({'x': 0, 'y': 0}, {'x': self.xSize, 'y': self.ySize}))
 
     def add_to_field(self, gridx: int, gridy: int, item: Item) -> None:
         self.quadtree.insert(item, Rect({'x': gridx, 'y': gridy}))
 
-    def remove_from_field(self, gridx: int, gridy: int):
+    def remove_from_field(self, gridx: int, gridy: int) -> None:
         """ removes item from field """
         self.quadtree.remove_item(Rect({'x': gridx, 'y': gridy}))
 
-    def get_field(self):
-        return self.field
+    def get_field(self) -> list:
+        """ returns a list of items """
+        return self.quadtree.searchAllItems(self.quadtree.mRect)
 
     def add_obstacle_to_playground(self, position):
         self.quadtree.insert({"item": self.object_table["obstacle"],
                               "weight": random.randrange(self.weightscale)}, Rect(position, {'x': 1, 'y': 1}))
 
     def reset_playground_field(self):
-        for column in range(0, self.ySize):
-            self.field.append([])
-            for row in range(0, self.xSize):
-                self.field[column].append({"fieldtype": self.object_table["empty"],
-                                           "fieldweight": random.randrange(self.weightscale)})
+        self.quadtree.resize(Rect({'x': 0, 'y': 0}, {'xSize': self.xSize, 'ySize': self.ySize}))
 
     def set_random_obstacles_to_field(self):
         if self.quadtree is not None:
-            for column in self.field:
-                column[random.randrange(len(column))] = self.object_table["obstacle"]
-
+            self.quadtree.insert({"item": self.object_table["obstacle"],
+                                  "weight": random.randrange(self.weightscale)}, Rect({'x': random.randrange(self.xSize), 'y': random.randrange(self.ySize)}, {'x': 1, 'y': 1}))
         # self.print_field()
 
     def set_random_goal(self):
-        if self.field is not None:
-            self.field[random.randrange(len(self.field[0]))][random.randrange(len(self.field[0]))] = self.object_table[
-                "goal"]
+        if self.quadtree is not None:
+            self.quadtree.insert({"item": self.object_table["obstacle"],
+                                  "weight": random.randrange(self.weightscale)}, Rect({'x': random.randrange(self.xSize), 'y': random.randrange(self.ySize)}, {'x': 1, 'y': 1}))
 
     def print_field(self):
-        for i, row in enumerate(self.field):
-            print("column {} {}".format(i, len(row)))
+        print(self.quadtree.searchAllItems(self.quadtree.mRect))
 
 
 
