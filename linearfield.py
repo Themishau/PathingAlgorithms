@@ -6,13 +6,26 @@ from enum import Enum, auto
 
 max_depth = 8
 
+object_table = {
+    "empty": 0,
+    "goal": 1,
+    "obstacle": 2,
+    "player": 3}
 
-class Item(Enum):
+class WeightScale(Enum):
+    """ Types of Items """
+    light = 1
+    medium = 5
+    heavy = 10
+
+
+class ItemType(Enum):
     """ Types of Items """
     empty = auto()
     goal = auto()
     obstacle = auto()
     player = auto()
+
 
 
 @dataclass(order=True, repr=True, eq=True)
@@ -24,34 +37,39 @@ class Rect:
         size = self.size
         return {'x': size['x'] / other, 'y': size['y'] / other}
 
-
     def resizeRect(self, Rect):
         self.pos = Rect.pos
         self.size = Rect.size
 
     def contains_point(self, point) -> bool:
-        return not (point.pos.x < self.pos.x
-                    or point.y < self.pos.y
-                    or point.x >= (self.pos.x + self.size.x)
-                    or point.y >= (self.pos.y + self.size.y))
+        return not (point.pos['x'] < self.pos['x']
+                    or point.y < self.pos['y']
+                    or point.x >= (self.pos['x'] + self.size['x'])
+                    or point.y >= (self.pos['y'] + self.size['y']))
 
     def contains_rect(self, rect: 'Rect') -> bool:
-        return (rect.pos.x < self.pos.x) \
-               and (rect.pos.x + rect.size.x < self.pos.x + self.size.x) \
-               and (rect.pos.y < self.pos.y) \
-               and (rect.pos.y + rect.size.y < self.pos.y + self.size.y)
+        return (rect.pos['x'] < self.pos['x']) \
+               and (rect.pos['x'] + rect.size['x'] < self.pos['x'] + self.size['x']) \
+               and (rect.pos['y'] < self.pos['y']) \
+               and (rect.pos['y'] + rect.size['y'] < self.pos['y'] + self.size['y'])
 
     def overlaps_rect(self, rect: 'Rect') -> bool:
-        return self.pos.x < rect.pos.x + rect.size.x \
-               and self.pos.x + self.size.x >= rect.pos.x \
-               and self.pos.y < rect.pos.y + rect.size.y \
-               and self.pos.y + self.size.y >= rect.pos.y
+        return self.pos['x'] < rect.pos['x'] + rect.size['x'] \
+               and self.pos['x'] + self.size['x'] >= rect.pos['x'] \
+               and self.pos['y'] < rect.pos['y'] + rect.size['y'] \
+               and self.pos['y'] + self.size['y'] >= rect.pos['y']
 
+@dataclass(order=True, repr=True, eq=True)
+class Item:
+    rect: Rect
+    item: ItemType = ItemType.empty
+    weight: WeightScale = WeightScale.light
 
 @dataclass(order=True, repr=True, eq=True)
 class QuadTree(object):
     # field based on grid example for grid 40x40
     mRect: Rect
+    depth: int
     # array of field of children
     mRectOfChildren: list[Rect] = field(default_factory=list)
     # max 4 quadtree children
@@ -59,13 +77,7 @@ class QuadTree(object):
     # stored im this quadtree with area + object itself
     items: list[dict[object, Rect]] = field(default_factory=list)
 
-    depth: int = 0
 
-    object_table = {
-        "empty": 0,
-        "goal": 1,
-        "obstacle": 2,
-        "player": 3}
 
     def add_depth(self):
         self.depth += 1
@@ -76,12 +88,12 @@ class QuadTree(object):
         self.mRect = rArea
         print(self.mRect)
         childSize = self.mRect / 2
-        print(childSize)
         self.mRectOfChildren = [Rect(self.mRect.pos, childSize),
                                 Rect({'x': self.mRect.pos['x'] + childSize['x'], 'y': self.mRect.pos['y']}, childSize),
                                 Rect({'x': self.mRect.pos['x'], 'y': self.mRect.pos['y'] + childSize['y']}, childSize),
                                 Rect({'x': self.mRect.pos['x'] + childSize['x'], 'y': self.mRect.pos['y'] + childSize['y']},
                                      childSize)]
+        print(self.mRectOfChildren)
 
     def ClearItems(self):
         self.items = []
@@ -99,16 +111,17 @@ class QuadTree(object):
 
     def insert(self, item, rectItemSize: Rect):
         for i in range(4):
-            if self.mRectOfChildren[i] is not None:
-
+            print(f' children number : {i} with properties of: {self.mRectOfChildren[i]}')
+            if self.mRectOfChildren[i] is not None\
+                    and self.mRectOfChildren[i].contains_rect(rectItemSize):
                 # max depth reached?
                 if self.depth + 1 < max_depth:
-
                     # does child exists?
-                    if self.quadtreechildren[i] is None:
+                    try:
+                        self.quadtreechildren[i]
+                    except IndexError:
                         # create child
-                        self.quadtreechildren[i] = QuadTree(self.mRectOfChildren[i], depth=self.depth + 1)
-
+                        self.quadtreechildren.append(QuadTree(self.mRectOfChildren[i], depth=self.depth + 1))
                     # child exists
                     self.quadtreechildren[i].insert(item, rectItemSize)
                     return True
@@ -116,7 +129,7 @@ class QuadTree(object):
         # if it does not fit into the children, so the item belongs to this object
         self.items.append({'item': item, 'itemsize': rectItemSize})
 
-    def searchAllItems(self, rectItemSize: Rect):
+    def searchAllItems(self, rectItemSize: Rect) -> list:
 
         listItems = []
         listItems = self.search_item(rectItemSize, listItems)
@@ -138,7 +151,7 @@ class QuadTree(object):
                 listItems = self.quadtreechildren[index].search_item(rectItemSize, listItems)
                 return listItems
 
-    def change_item(self, position: Rect, item: Item) -> None:
+    def change_item(self, position: Rect, item: ItemType) -> None:
 
         for index, item in enumerate(self.items):
             if position.overlaps_rect(item['itemsize']):
@@ -223,7 +236,7 @@ class QuadtreeField(pygame.sprite.Sprite):
         self.ySize = math.ceil(self.size / self.gridSizeScale)
         self.quadtree.resize(Rect({'x': 0, 'y': 0}, {'x': self.xSize, 'y': self.ySize}))
 
-    def add_to_field(self, gridx: int, gridy: int, item: Item) -> None:
+    def add_to_field(self, gridx: int, gridy: int, item: ItemType) -> None:
         self.quadtree.insert(item, Rect({'x': gridx, 'y': gridy}))
 
     def remove_from_field(self, gridx: int, gridy: int) -> None:
@@ -241,11 +254,12 @@ class QuadtreeField(pygame.sprite.Sprite):
     def reset_playground_field(self):
         self.quadtree.resize(Rect({'x': 0, 'y': 0}, {'xSize': self.xSize, 'ySize': self.ySize}))
 
-    def set_random_obstacles_to_field(self):
-        if self.quadtree is not None:
-            self.quadtree.insert({"item": self.object_table["obstacle"],
-                                  "weight": random.randrange(self.weightscale)}, Rect({'x': random.randrange(self.xSize), 'y': random.randrange(self.ySize)}, {'x': 1, 'y': 1}))
-        # self.print_field()
+    def set_random_obstacles_to_field(self, obstacles: int) -> None:
+        for i in range(obstacles):
+            if self.quadtree is not None:
+                self.quadtree.insert({"item": self.object_table["obstacle"],
+                                      "weight": random.randrange(self.weightscale)}, Rect({'x': random.randrange(self.xSize), 'y': random.randrange(self.ySize)}, {'x': 1, 'y': 1}))
+            # self.print_field()
 
     def set_random_goal(self):
         if self.quadtree is not None:
@@ -253,8 +267,7 @@ class QuadtreeField(pygame.sprite.Sprite):
                                   "weight": random.randrange(self.weightscale)}, Rect({'x': random.randrange(self.xSize), 'y': random.randrange(self.ySize)}, {'x': 1, 'y': 1}))
 
     def print_field(self):
-        print(self.quadtree.searchAllItems(self.quadtree.mRect))
-
+        print(f' print_field: {self.quadtree.searchAllItems(self.quadtree.mRect)}')
 
 
 class LinearField(pygame.sprite.Sprite):
