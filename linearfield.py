@@ -75,7 +75,7 @@ class QuadTree(object):
     # max 4 quadtree children
     quadtreechildren: list['QuadTree'] = field(default_factory=list)
     # stored im this quadtree with area + object itself
-    items: list[dict[object, Rect]] = field(default_factory=list)
+    items: list[Item] = field(default_factory=list)
 
 
 
@@ -109,11 +109,11 @@ class QuadTree(object):
 
         return count
 
-    def insert(self, item, rectItemSize: Rect):
+    def insert(self, item: Item) -> bool:
         for i in range(4):
             print(f' children number : {i} with properties of: {self.mRectOfChildren[i]}')
             if self.mRectOfChildren[i] is not None\
-                    and self.mRectOfChildren[i].contains_rect(rectItemSize):
+                    and self.mRectOfChildren[i].contains_rect(item.rect):
                 # max depth reached?
                 if self.depth + 1 < max_depth:
                     # does child exists?
@@ -123,63 +123,71 @@ class QuadTree(object):
                         # create child
                         self.quadtreechildren.append(QuadTree(self.mRectOfChildren[i], depth=self.depth + 1))
                     # child exists
-                    self.quadtreechildren[i].insert(item, rectItemSize)
+                    self.quadtreechildren[i].insert(item)
                     return True
 
         # if it does not fit into the children, so the item belongs to this object
-        self.items.append({'item': item, 'itemsize': rectItemSize})
+        self.items.append(item)
 
-    def searchAllItems(self, rectItemSize: Rect) -> list:
-
-        listItems = []
-        listItems = self.search_item(rectItemSize, listItems)
+    def search_All_Items_by_name(self, item: Item) -> list:
+        listItems = self.search_item_by_name(item)
         return listItems
 
-    def search_item(self, rectItemSize: Rect, listItems: list) -> list:
+    def search_item_by_name(self, item: Item) -> list:
+        pass
+
+    def search_All_Items_in_Field(self, item_position: Item.rect) -> list:
+
+        listItems = []
+        listItems = self.search_item_in_field(item_position, listItems)
+        return listItems
+
+    def search_item_in_field(self, item_position: Item.rect, listItems: list) -> list:
         """ searches items and returns a list of items """
         for item in self.items:
-            if rectItemSize.overlaps_rect(item['itemsize']):
-                listItems.append(item['item'])
+            if item_position.rect.overlaps_rect(item.rect):
+                listItems.append(item.item)
 
         for index, children in enumerate(self.quadtreechildren):
             # if in rect, add it to list without checks
-            if rectItemSize.contains_rect(self.mRectOfChildren[index]):
+            if item_position.rect.contains_rect(self.mRectOfChildren[index]):
                 listItems = self.quadtreechildren[index].fillIItemsTolistItems(listItems)
                 return listItems
             # if overlaps, we need to do some checks
-            elif self.mRectOfChildren[index].overlaps_rect(rectItemSize):
-                listItems = self.quadtreechildren[index].search_item(rectItemSize, listItems)
+            elif self.mRectOfChildren[index].overlaps_rect(item_position.rect):
+                listItems = self.quadtreechildren[index].search_item_in_field(item_position, listItems)
                 return listItems
 
-    def change_item(self, position: Rect, item: ItemType) -> None:
+    def change_item(self, item: Item) -> None:
 
         for index, item in enumerate(self.items):
-            if position.overlaps_rect(item['itemsize']):
-                # delete by index
-                del self.items[index]
+            if item.rect.overlaps_rect(item.rect):
+                # changes the item on this position
+                self.items[index] = item
 
         for index, children in enumerate(self.quadtreechildren):
             # if in rect, add it to list without checks
-            if position.contains_rect(self.mRectOfChildren[index]):
-                self.items[index] = {'item': item, 'itemsize': self.items[index]['itemsize'] }
+            if item.rect.contains_rect(self.mRectOfChildren[index]):
+                self.items[index] = item
             # if overlaps, we need to do some checks
-            elif self.mRectOfChildren[index].overlaps_rect(position):
-                self.quadtreechildren[index].change_item(position, item)
+            elif self.mRectOfChildren[index].overlaps_rect(item.rect):
+                self.quadtreechildren[index].change_item(item)
 
-    def remove_item(self, position: Rect) -> None:
-
+    def remove_item(self, item_to_remove: Item) -> None:
+        """ searches in quadtree and sets the item to empty """
         for index, item in enumerate(self.items):
-            if position.overlaps_rect(item['itemsize']):
-                # delete by index
-                del self.items[index]
+            if item_to_remove.rect.overlaps_rect(item.rect):
+                # set it to empty
+                item_to_remove.item = ItemType.empty
+                self.items[index] = item_to_remove
 
         for index, children in enumerate(self.quadtreechildren):
             # if in rect, add it to list without checks
-            if position.contains_rect(self.mRectOfChildren[index]):
+            if item_to_remove.rect.contains_rect(self.mRectOfChildren[index]):
                 del self.items[index]
             # if overlaps, we need to do some checks
-            elif self.mRectOfChildren[index].overlaps_rect(position):
-                self.quadtreechildren[index].remove_item(position)
+            elif self.mRectOfChildren[index].overlaps_rect(item_to_remove.rect):
+                self.quadtreechildren[index].remove_item(item_to_remove)
 
 
     def fillIItemsTolistItems(self, listItems: list) -> list:
@@ -236,20 +244,19 @@ class QuadtreeField(pygame.sprite.Sprite):
         self.ySize = math.ceil(self.size / self.gridSizeScale)
         self.quadtree.resize(Rect({'x': 0, 'y': 0}, {'x': self.xSize, 'y': self.ySize}))
 
-    def add_to_field(self, gridx: int, gridy: int, item: ItemType) -> None:
-        self.quadtree.insert(item, Rect({'x': gridx, 'y': gridy}))
+    def add_to_field(self, item: Item) -> None:
+        self.quadtree.insert(item)
 
-    def remove_from_field(self, gridx: int, gridy: int) -> None:
+    def remove_from_field(self, item: Item) -> None:
         """ removes item from field """
-        self.quadtree.remove_item(Rect({'x': gridx, 'y': gridy}))
+        self.quadtree.remove_item(item)
 
-    def get_field(self) -> list:
+    def get_items_in_field(self) -> list:
         """ returns a list of items """
         return self.quadtree.searchAllItems(self.quadtree.mRect)
 
-    def add_obstacle_to_playground(self, position):
-        self.quadtree.insert({"item": self.object_table["obstacle"],
-                              "weight": random.randrange(self.weightscale)}, Rect(position, {'x': 1, 'y': 1}))
+    def add_obstacle_to_playground(self, position, size):
+        self.quadtree.insert(Item(Rect({'x': 0, 'y': 0}, {'xSize': size['xSize'], 'ySize': size['ySize']}), ItemType.obstacle, WeightScale.heavy)
 
     def reset_playground_field(self):
         self.quadtree.resize(Rect({'x': 0, 'y': 0}, {'xSize': self.xSize, 'ySize': self.ySize}))
