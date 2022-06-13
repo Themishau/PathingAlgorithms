@@ -2,7 +2,9 @@ import pygame
 import math
 import random
 from dataclasses import dataclass, field, asdict
+from typing import List
 from enum import Enum, auto
+
 
 max_depth = 8
 
@@ -69,15 +71,15 @@ class Item:
 @dataclass(order=True, repr=True, eq=True)
 class QuadTree(object):
     # field based on grid example for grid 40x40
+
     mRect: Rect
     depth: int
     # array of field of children
-    mRectOfChildren: list[Rect] = field(default_factory=list)
+    mRectOfChildren: List[Rect] = field(default_factory=list)
     # max 4 quadtree children
-    quadtreechildren: list['QuadTree'] = field(default_factory=list)
+    quadtreechildren: List['QuadTree'] = field(default_factory=list)
     # stored im this quadtree with area + object itself
     items: list[Item] = field(default_factory=list)
-
 
 
     def add_depth(self):
@@ -112,24 +114,27 @@ class QuadTree(object):
 
     def insert(self, item: Item) -> bool:
         print(f' ---- children :  with properties of: {self.mRectOfChildren} and {self.quadtreechildren}')
-        for i in range(4):
-            if self.mRectOfChildren[i] is not None\
-                    and self.mRectOfChildren[i].contains_rect(item.rect):
+
+        for rect_Children in self.mRectOfChildren:
+            if rect_Children.contains_rect(item.rect):
                 # max depth reached?
                 if self.depth + 1 < max_depth:
                     # does child exists?
-                    try:
-                        self.quadtreechildren[i]
-                    except IndexError:
-                        # create child
-                        self.quadtreechildren.append(QuadTree(self.mRectOfChildren[i], depth=self.depth + 1))
-                    # child exists
-                    print(f' ---- children EXIST : {self.mRectOfChildren} and {self.quadtreechildren}')
-                    self.quadtreechildren[i].insert(item)
-                    return True
+                    l_child_exists = False
+                    for index, quadChildren in enumerate(self.quadtreechildren):
+                        print(f'{quadChildren.mRectOfChildren} = {rect_Children} || {quadChildren.mRectOfChildren == rect_Children}')
+                        if quadChildren.mRectOfChildren == rect_Children:
+                            self.quadtreechildren[index].insert(item)
+                            l_child_exists = True
 
+                    if not l_child_exists:
+                        self.quadtreechildren.append(QuadTree(rect_Children, depth=self.depth + 1, items=[item]))
+                        print(f' ---- children NEWWWWW : {rect_Children}')
+                    print(f' ---- children EXIST : {self.mRectOfChildren} and {self.quadtreechildren}')
+                    return True
         # if it does not fit into the children, so the item belongs to this object
         self.items.append(item)
+
 
     def search_All_Items_by_name(self, item: Item) -> list:
         listItems = self.search_item_by_name(item)
@@ -196,9 +201,10 @@ class QuadTree(object):
         """ add items to list and returns it """
         for item in self.items:
             listItems.append(item)
+        print(f'my ITEMS: {self.items}')
         # call children recursively
-        for index, children in enumerate(self.quadtreechildren):
-            listItems = self.quadtreechildren[index].fillIItemsTolistItems(listItems)
+        for children in self.quadtreechildren:
+            listItems = listItems + children.fillIItemsTolistItems(listItems)
 
         return listItems
 
