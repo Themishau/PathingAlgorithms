@@ -19,8 +19,7 @@ def positionsAreEqual(positionA, positionB):
     return positionA.x == positionB.x and positionA.y == positionB.y
 
 
-def get_font(size):  # Returns Press-Start-2P in the desired size
-    return pygame.font.Font("assets/font.ttf", size)
+
 
 
 # for i, j in zip(a,b):
@@ -46,12 +45,63 @@ class AlgoGame:
 
         self.field = LinearField(800, True)
         self.quadfield = QuadtreeField(QuadTree(Rect({'x': 0, 'y':0},{'x': self.gridsizeX, 'y': self.gridsizeY}), 0), size=int(self.field_WIDTH))
-        self.quadfield.initilizeQuadtree()
-        self.quadfield.set_random_obstacles_to_field(20)
+        # self.quadfield.initilizeQuadtree()
+        self.quadfield.set_random_obstacles_to_field(40)
         self.quadfield.print_field()
+        self.deltatimeupdate = 0
 
         # self.field.print_field()
         self.algorithmPlayer = AlgorithmPlayer('TestAlgorithm')
+
+        self.play_button = None
+        self.play_button = Button(image=None, pos=(850, 50), text_input='play', font=self.get_font(20), base_color='#d7fcd4',
+                                  hovering_color='Yellow')
+
+    def get_font(self, size):  # Returns Press-Start-2P in the desired size
+        return pygame.font.Font("assets/font.ttf", size)
+
+    def init_game(self):
+        self.draw_objects_on_field(self.field.get_field())
+
+    def quit_game(self):
+        pass
+
+    def update(self):
+        pass
+
+    def render(self, screen):
+
+        # Draw a solid white circle in the center
+        circle = pygame.Surface((50, 50))
+        circle.fill((255, 255, 255))
+        getTicksLastFrame = pygame.time.get_ticks()
+
+        ### Fill the background with white ###
+        screen.fill((0, 0, 0))
+        surf = self.draw_objects_on_field(self.field.field)
+
+        screen.blit(surf, (0, 0))
+        # screen.blit(circle, (300, 300))
+        pygame.display.flip()
+
+        self.play_button.update(screen)
+
+        ### Flip the display (refresh) ###
+        pygame.display.flip()
+
+        ### Ensure program maintains a rate of 30 frames per second ###
+        self.clock.tick(60)
+
+        t = pygame.time.get_ticks()
+        # deltaTime in seconds.
+
+        deltaTime = (t - getTicksLastFrame) / 1000.0
+        getTicksLastFrame = t
+        self.deltatimeupdate += deltaTime
+        if self.deltatimeupdate > 3:
+            self.deltatimeupdate = 0
+            self.field.set_random_obstacles_to_field()
+
 
 
     def draw_objects_on_field(self, field):
@@ -85,56 +135,43 @@ class AlgoGame:
                 # print("{} {} {} {}".format(j, i, j , i ))
         return surf
 
-    def startGame(self):
 
-        pygame.init()
 
-        # Set up the drawing window
-        screen = pygame.display.set_mode((self.screen_width, self.screen_height))
-        # Run until the user asks to quit
-        running = True
+def startGame():
 
-        play_button = Button(image=None, pos=(850, 50), text_input='play', font=get_font(20), base_color='#d7fcd4',
-                             hovering_color='Yellow')
-        self.draw_objects_on_field(self.field.get_field())
+    """ creating an instance of AlgoGame """
+    pygame.init()
+    pathalgo = AlgoGame()
 
-        # Draw a solid white circle in the center
-        circle = pygame.Surface((50, 50))
-        circle.fill((255, 255, 255))
-        while running:
+    # Set up the drawing window
+    screen = pygame.display.set_mode((pathalgo.screen_width, pathalgo.screen_height))
 
-            ### check for actions ###
-            for event in pygame.event.get():
-                # Did the user hit a key?
-                if event.type == KEYDOWN:
+    # Run until the user asks to quit
+    running = True
 
-                    # Was it the Escape key? If so, stop the loop.
-                    if event.key == K_ESCAPE:
-                        running = False
+    while running:
 
-                # Did the user click the window close button? If so, stop the loop.
-                elif event.type == QUIT:
+        ### check for actions ###
+        for event in pygame.event.get():
+            # Did the user hit a key?
+            if event.type == KEYDOWN:
 
+                # Was it the Escape key? If so, stop the loop.
+                if event.key == K_ESCAPE:
                     running = False
 
-            ### game logic ###
+            # Did the user click the window close button? If so, stop the loop.
+            elif event.type == QUIT:
 
-            ### Fill the background with white ###
-            screen.fill((0, 0, 0))
-            surf = self.draw_objects_on_field(self.field.field)
-            ### draw objects ###
-            screen.blit(surf, (0, 0))
-            # screen.blit(circle, (300, 300))
-            pygame.display.flip()
+                running = False
 
-            button = play_button
-            button.update(screen)
+        ### game logic ###
+        pathalgo.quadfield.update()
 
-            ### Flip the display (refresh) ###
-            pygame.display.flip()
+        ### draw objects ###
+        pathalgo.render(screen)
 
-            ### Ensure program maintains a rate of 30 frames per second ###
-            self.clock.tick(10)
+    pygame.quit()
 
-        # Done! Time to quit.
-        pygame.quit()
+
+

@@ -6,7 +6,7 @@ from typing import List
 from enum import Enum, auto
 
 
-max_depth = 8
+max_depth = 2
 
 object_table = {
     "empty": 0,
@@ -50,10 +50,9 @@ class Rect:
                     or point.y >= (self.pos['y'] + self.size['y']))
 
     def contains_rect(self, rect: 'Rect') -> bool:
-        print(f'Rect CONTAINS: {rect}')
-        return (rect.pos['x'] < self.pos['x']) \
+        return (rect.pos['x'] >= self.pos['x']) \
                and (rect.pos['x'] + rect.size['x'] < self.pos['x'] + self.size['x']) \
-               and (rect.pos['y'] < self.pos['y']) \
+               and (rect.pos['y'] >= self.pos['y']) \
                and (rect.pos['y'] + rect.size['y'] < self.pos['y'] + self.size['y'])
 
     def overlaps_rect(self, rect: 'Rect') -> bool:
@@ -80,7 +79,9 @@ class QuadTree(object):
     quadtreechildren: List['QuadTree'] = field(default_factory=list)
     # stored im this quadtree with area + object itself
     items: list[Item] = field(default_factory=list)
-
+    def __post_init__(self):
+        print(f'post init: {self.mRect}')
+        self.resize(self.mRect)
 
     def add_depth(self):
         self.depth += 1
@@ -89,14 +90,12 @@ class QuadTree(object):
     def resize(self, rArea):
         self.ClearItems()
         self.mRect = rArea
-        print(self.mRect)
         childSize = self.mRect / 2
         self.mRectOfChildren = [Rect(self.mRect.pos, childSize),
                                 Rect({'x': self.mRect.pos['x'] + childSize['x'], 'y': self.mRect.pos['y']}, childSize),
                                 Rect({'x': self.mRect.pos['x'], 'y': self.mRect.pos['y'] + childSize['y']}, childSize),
                                 Rect({'x': self.mRect.pos['x'] + childSize['x'], 'y': self.mRect.pos['y'] + childSize['y']},
                                      childSize)]
-        print(self.mRectOfChildren)
 
     def ClearItems(self):
         self.items = []
@@ -113,8 +112,6 @@ class QuadTree(object):
         return count
 
     def insert(self, item: Item) -> bool:
-        print(f' ---- children :  with properties of: {self.mRectOfChildren} and {self.quadtreechildren}')
-
         for rect_Children in self.mRectOfChildren:
             if rect_Children.contains_rect(item.rect):
                 # max depth reached?
@@ -122,16 +119,17 @@ class QuadTree(object):
                     # does child exists?
                     l_child_exists = False
                     for index, quadChildren in enumerate(self.quadtreechildren):
-                        print(f'{quadChildren.mRectOfChildren} = {rect_Children} || {quadChildren.mRectOfChildren == rect_Children}')
-                        if quadChildren.mRectOfChildren == rect_Children:
+                        if quadChildren.mRect == rect_Children:
                             self.quadtreechildren[index].insert(item)
-                            l_child_exists = True
+                            return True
+
 
                     if not l_child_exists:
                         self.quadtreechildren.append(QuadTree(rect_Children, depth=self.depth + 1, items=[item]))
-                        print(f' ---- children NEWWWWW : {rect_Children}')
-                    print(f' ---- children EXIST : {self.mRectOfChildren} and {self.quadtreechildren}')
-                    return True
+                        self.quadtreechildren[-1].insert(item)
+                        # print(f' ---- children NEWWWWW : {rect_Children}')
+                    # print(f' ---- children EXIST : {self.mRectOfChildren} \b and {self.quadtreechildren}')
+                        return True
         # if it does not fit into the children, so the item belongs to this object
         self.items.append(item)
 
@@ -143,13 +141,36 @@ class QuadTree(object):
     def search_item_by_name(self, item: Item) -> list:
         pass
 
-    def search_All_Items_in_Field(self, item_position: Rect) -> list:
+    def search_All_Items_by_Field(self, item_position: Rect) -> list:
 
         listItems = []
-        listItems = self.search_item_in_field(item_position, listItems)
+        listItems = self.search_item_by_field(item_position, listItems)
         return listItems
 
-    def search_item_in_field(self, item_position: Rect, listItems: list) -> list:
+    def search_All_Items_in_Field(self, search_area: Rect) -> list:
+        listItems = []
+        listItems = self.search_item_in_field(search_area, listItems)
+        for index, items in enumerate(listItems):
+            print(f' Item No.: {index} in area: {items}')
+        return listItems
+
+    def search_item_in_field(self, search_area: Rect, listItems: list) -> list:
+        """ searches items and returns a list of items """
+
+        for item in self.items:
+            if search_area.overlaps_rect(item.rect):
+                listItems.append(item)
+
+        for index, children in enumerate(self.quadtreechildren):
+            # if in rect, add it to list without checks
+            if search_area.contains_rect(children.mRect):
+                listItems = (children.fillIItemsTolistItems(listItems))
+            # if overlaps, we need to do some checks
+            elif self.mRectOfChildren[index].overlaps_rect(search_area):
+                listItems = (children.search_item_in_field(search_area, listItems))
+        return listItems
+
+    def search_item_by_field(self, item_position: Rect, listItems: list) -> list:
         """ searches items and returns a list of items """
         for item in self.items:
             if item_position.overlaps_rect(item.rect):
@@ -162,7 +183,7 @@ class QuadTree(object):
                 return listItems
             # if overlaps, we need to do some checks
             elif self.mRectOfChildren[index].overlaps_rect(item_position):
-                listItems = self.quadtreechildren[index].search_item_in_field(item_position, listItems)
+                listItems = self.quadtreechildren[index].search_item_by_field(item_position, listItems)
                 return listItems
 
     def change_item(self, item: Item) -> None:
@@ -204,7 +225,7 @@ class QuadTree(object):
         print(f'my ITEMS: {self.items}')
         # call children recursively
         for children in self.quadtreechildren:
-            listItems = listItems + children.fillIItemsTolistItems(listItems)
+            children.fillIItemsTolistItems(listItems)
 
         return listItems
 
@@ -246,11 +267,10 @@ class QuadtreeField(pygame.sprite.Sprite):
     #
     # if testmode is True:
     #     self.set_random_obstacles_to_field()
-
-    def initilizeQuadtree(self) -> None:
+    def __post_init__(self):
         self.xSize = math.ceil(self.size / self.gridSizeScale)
         self.ySize = math.ceil(self.size / self.gridSizeScale)
-        self.quadtree.resize(Rect({'x': 0, 'y': 0}, {'x': self.xSize, 'y': self.ySize}))
+
 
     def add_to_field(self, item: Item) -> None:
         self.quadtree.insert(item)
@@ -261,7 +281,7 @@ class QuadtreeField(pygame.sprite.Sprite):
 
     def get_items_in_field(self) -> list:
         """ returns a list of items """
-        return self.quadtree.search_All_Items_in_Field(self.quadtree.mRect)
+        return self.quadtree.search_All_Items_by_Field(self.quadtree.mRect)
 
     def add_obstacle_to_playground(self, position: Rect):
         self.quadtree.insert(Item(position, ItemType.obstacle, WeightScale.heavy))
@@ -275,8 +295,8 @@ class QuadtreeField(pygame.sprite.Sprite):
                 self.quadtree.insert(
                     Item(Rect({'x': random.randrange(self.xSize),
                                'y': random.randrange(self.ySize)},
-                               {'x': random.randrange(self.xSize),
-                               'y': random.randrange(self.ySize)}),
+                               {'x': 1,
+                               'y': 1}),
                                ItemType.obstacle, WeightScale.heavy))
             # self.print_field()
 
@@ -285,13 +305,15 @@ class QuadtreeField(pygame.sprite.Sprite):
             self.quadtree.insert(
                 Item(Rect({'x': random.randrange(self.xSize),
                            'y': random.randrange(self.ySize)},
-                          {'x': random.randrange(self.xSize),
-                           'y': random.randrange(self.ySize)}),
+                          {'x': 1,
+                           'y':1}),
                            ItemType.goal, WeightScale.heavy))
 
 
     def print_field(self):
-        print(f' print_field: {self.quadtree.search_All_Items_in_Field(self.quadtree.mRect)}')
+
+        print(f' area we are searching in:{self.quadtree.mRect} \b print_field: {self.quadtree.search_All_Items_in_Field(self.quadtree.mRect)}')
+
 
 
 class LinearField(pygame.sprite.Sprite):
